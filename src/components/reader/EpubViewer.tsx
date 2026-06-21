@@ -45,10 +45,11 @@ export function EpubViewer({ book, theme, fontSize, onSelection }: EpubViewerPro
       try {
         const bytes = await readBookBytes(book.id);
         const copy = Uint8Array.from(bytes);
-        const blob = new Blob([copy], { type: "application/epub+zip" });
-        const url = URL.createObjectURL(blob);
+        const buffer = copy.buffer.slice(copy.byteOffset, copy.byteOffset + copy.byteLength);
 
-        bookInstance = ePub(url);
+        // Pass the raw ArrayBuffer so epub.js opens it as a zip archive. Passing a
+        // blob: URL makes epub.js misdetect it as an unpacked directory and hang.
+        bookInstance = ePub(buffer);
         const rendition = bookInstance.renderTo(containerRef.current!, {
           width: "100%",
           height: "100%",
