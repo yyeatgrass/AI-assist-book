@@ -1,0 +1,258 @@
+name: Release
+
+# Builds installers for every platform and attaches them to a GitHub Release.
+#
+# How to use:
+#   1. Push a version tag, e.g.   git tag v0.1.0 && git push origin v0.1.0
+#   2. Or run this workflow manually from the Actions tab (workflow_dispatch).
+#
+# Output (attached to a draft GitHub Release):
+#   - macOS:   AI Assist Book_x.y.z_universal.dmg  (Intel + Apple Silicon)
+#   - Windows: AI Assist Book_x.y.z_x64-setup.exe (NSIS) + ..._x64_en-US.msi
+#   - Linux:   ai-assist-book_x.y.z_amd64.deb + ..._amd64.AppImage
+#   - Android: app-universal-release.apk (signed if keystore secrets are set)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Desktop: macOS (universal), Windows, Linux
+  # ---------------------------------------------------------------------------
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: ubuntu-22.04
+            args: "--bundles deb,appimage"
+            rust-targets: ""
+          - platform: windows-latest
+            args: ""
+            rust-targets: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            file \
+            libxdo-dev \
+            libssl-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and release (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'app-v__VERSION__' }}
+          releaseName: "AI Assist Book ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # ---------------------------------------------------------------------------
+  # Android: produces an installable APK
+  # ---------------------------------------------------------------------------
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: sdkmanager "ndk;26.1.10909125"
+
+      - name: Setup Rust (Android targets)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Initialize Android project
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+        run: npx tauri android init --ci
+
+      - name: Decode signing keystore (optional)
+        if: ${{ env.ANDROID_KEY_BASE64 != '' }}
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+        run: |
+          echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Build Android APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+        run: npx tauri android build --apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Attach APK to release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: ${{ github.ref_name }}
+          files: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # iOS: produces an installable .ipa.
+  #
+  # Apple requires a paid Developer account to sign apps. This job stays GREEN
+  # but does nothing until you add these repository secrets:
+  #   APPLE_CERTIFICATE           base64 of your Apple Distribution .p12
+  #   APPLE_CERTIFICATE_PASSWORD  password for that .p12
+  #   APPLE_PROVISIONING_PROFILE  base64 of the .mobileprovision
+  #   APPLE_DEVELOPMENT_TEAM      your 10-character Team ID
+  #   IOS_EXPORT_METHOD           ad-hoc | app-store-connect | development
+  # ---------------------------------------------------------------------------
+  ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect signing secrets
+        id: signing
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::iOS signing secrets not configured — skipping iOS build. Add APPLE_* secrets to enable it."
+          fi
+
+      - name: Setup Node
+        if: steps.signing.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust (iOS targets)
+        if: steps.signing.outputs.ready == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+
+      - name: Cache Rust
+        if: steps.signing.outputs.ready == 'true'
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Import signing certificate
+        if: steps.signing.outputs.ready == 'true'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Install provisioning profile
+        if: steps.signing.outputs.ready == 'true'
+        env:
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$APPLE_PROVISIONING_PROFILE" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+      - name: Install frontend dependencies
+        if: steps.signing.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Initialize iOS project
+        if: steps.signing.outputs.ready == 'true'
+        run: npx tauri ios init --ci
+
+      - name: Build iOS app
+        if: steps.signing.outputs.ready == 'true'
+        env:
+          APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
+        run: npx tauri ios build --export-method ${{ secrets.IOS_EXPORT_METHOD || 'ad-hoc' }}
+
+      - name: Upload IPA artifact
+        if: steps.signing.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: src-tauri/gen/apple/build/**/*.ipa
+          if-no-files-found: error
+
+      - name: Attach IPA to release
+        if: steps.signing.outputs.ready == 'true' && github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: ${{ github.ref_name }}
+          files: src-tauri/gen/apple/build/**/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

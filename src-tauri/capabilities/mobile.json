@@ -1,0 +1,32 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "Mobile capabilities for AI Assist Book",
+  "platforms": ["iOS", "android"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "fs:default",
+    "store:default",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [{ "path": "$APPDATA/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$APPDATA/**" }]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [{ "path": "$APPDATA/**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$APPDATA/**" }]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [{ "path": "$APPDATA/**" }]
+    }
+  ]
+}

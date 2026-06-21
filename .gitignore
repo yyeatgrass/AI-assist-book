@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+src-tauri/target/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Tauri
+src-tauri/gen/
+
+# Travel VPN offline prep (installers + local credentials)
+travel-vpn/offline-prep/installers/*
+!travel-vpn/offline-prep/installers/.gitkeep
+travel-vpn/offline-prep/credentials.local.md
+travel-vpn/clash/h2.yaml
