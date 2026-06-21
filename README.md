@@ -10,6 +10,8 @@ Works on macOS, Windows, Linux, iPhone/iPad, and Android.
 
 ## Get the app
 
+> **Current availability:** Only **macOS** has a ready-to-download installer right now. **Windows, Android, and iPhone/iPad are not yet available as a direct download** — those builds still need to be produced by a developer (see [For developers](#for-developers)). Direct downloads for them are planned.
+
 ### macOS (ready to download now)
 
 1. Download the installer: [`releases/AI Assist Reader_0.1.0_universal.dmg`](releases/) (works on both Intel and Apple Silicon Macs).
@@ -17,18 +19,32 @@ Works on macOS, Windows, Linux, iPhone/iPad, and Android.
 3. Drag the **AI Assist Reader** icon into your **Applications** folder.
 4. Open it from Launchpad or Applications.
 
-> **First time you open it, macOS may say "cannot be opened because the developer cannot be verified."**
-> This is normal for an app that isn't signed by Apple yet. To open it (only needed once):
-> **Right-click** (or Control-click) the app icon → choose **Open** → click **Open** again in the dialog.
+> **First time you open it, macOS will block it** with a message like *"cannot be opened because the developer cannot be verified"* or *"Apple could not verify 'AI Assist Reader' is free of malware."*
+> This is normal for an app that isn't signed by Apple yet — it does **not** mean the app has a virus. You must do this on **each** Mac where you run it (copying the file to another Mac re-triggers the block). To allow it (only needed once per Mac):
+>
+> **On recent macOS (Sequoia and later):**
+> 1. Double-click the app, then dismiss the warning.
+> 2. Open **System Settings → Privacy & Security**.
+> 3. Scroll down to **"AI Assist Reader was blocked…"** and click **Open Anyway**.
+> 4. Confirm with your password / Touch ID, then click **Open**.
+>
+> *(On older macOS you can instead right-click the app icon → **Open** → **Open** again.)*
+>
+> **Or, via Terminal (fastest if you're comfortable with it):** after moving the app to Applications, run:
+> ```bash
+> xattr -dr com.apple.quarantine "/Applications/AI Assist Reader.app"
+> ```
 
-### Windows / Linux / iPhone / Android
+### Windows / Linux / iPhone / Android (not a direct download yet)
 
-Prebuilt installers for these are produced automatically (see [For developers](#for-developers) for how releases are generated). When a release is published, you'll find:
+There is **no ready-made installer to download for these platforms yet.** The app already supports them technically, but the installable files still have to be built first (by a developer, or automatically via GitHub Actions — see [For developers](#for-developers)). Once built, they look like this:
 
 - **Windows:** a `.exe` setup file (just double-click to install)
 - **Linux:** a `.AppImage` (make it executable and run) or `.deb`
 - **Android:** an `.apk` you can install on your phone
 - **iPhone/iPad:** requires installing through Apple (an App Store / TestFlight build)
+
+If you need one of these, let the maintainer know — producing them is just a build step.
 
 ---
 
@@ -156,6 +172,8 @@ MIT
 
 ## 获取应用
 
+> **目前支持情况：** 现在只有 **macOS** 提供可直接下载的安装包。**Windows、Android、iPhone/iPad 暂时还不支持直接下载**——这些平台的安装包还需要由开发者构建生成（见 [面向开发者](#面向开发者)）。后续会陆续支持直接下载。
+
 ### macOS（现在就能下载）
 
 1. 下载安装包：[`releases/AI Assist Reader_0.1.0_universal.dmg`](releases/)（Intel 和 Apple Silicon 芯片的 Mac 都能用）。
@@ -163,18 +181,32 @@ MIT
 3. 把 **AI Assist Reader** 图标拖进 **应用程序（Applications）** 文件夹。
 4. 从「启动台」或「应用程序」里打开。
 
-> **首次打开时，macOS 可能提示「无法打开，因为无法验证开发者」。**
-> 这是因为应用还没做 Apple 签名，属于正常现象。绕过方法（只需做一次）：
-> **右键点击**（或按住 Control 点击）应用图标 → 选择 **打开** → 在弹窗里再点一次 **打开**。
+> **首次打开时，macOS 会拦截**，提示类似「无法打开，因为无法验证开发者」，或「Apple 无法验证 “AI Assist Reader” 是否包含恶意软件」。
+> 这是应用还没做 Apple 签名的正常现象，**不代表有病毒**。每台运行它的 Mac 都要放行一次（把文件拷到另一台 Mac 会重新被拦）。放行方法（每台只需一次）：
+>
+> **新版 macOS（Sequoia 及以后）：**
+> 1. 双击应用，关掉提示。
+> 2. 打开 **系统设置 → 隐私与安全性**。
+> 3. 向下滚动，找到 **「已阻止使用 AI Assist Reader…」**，点 **仍要打开（Open Anyway）**。
+> 4. 用密码 / 指纹确认，再点 **打开**。
+>
+> *（较旧的 macOS 可以直接右键应用图标 →「打开」→ 再点「打开」。）*
+>
+> **或用终端（会用命令行的话最快）：** 把应用放进「应用程序」后运行：
+> ```bash
+> xattr -dr com.apple.quarantine "/Applications/AI Assist Reader.app"
+> ```
 
-### Windows / Linux / iPhone / Android
+### Windows / Linux / iPhone / Android（暂不支持直接下载）
 
-这些平台的安装包会自动构建生成（生成方式见 [面向开发者](#面向开发者)）。发布后你会得到：
+**这些平台目前还没有可直接下载的现成安装包。** 应用在技术上已经支持它们，但安装文件需要先构建出来（由开发者构建，或通过 GitHub Actions 自动生成——见 [面向开发者](#面向开发者)）。构建出来后大致是这样的：
 
 - **Windows：** `.exe` 安装程序（双击即可安装）
 - **Linux：** `.AppImage`（赋予可执行权限后运行）或 `.deb`
 - **Android：** 可直接安装到手机的 `.apk`
 - **iPhone/iPad：** 需通过 Apple 渠道安装（App Store / TestFlight 版本）
+
+如果你需要其中某个平台的安装包，可以告诉维护者——这只是一个构建步骤。
 
 ---
 
