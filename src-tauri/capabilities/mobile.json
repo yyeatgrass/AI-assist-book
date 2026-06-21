@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "mobile",
-  "description": "Mobile capabilities for AI Assist Book",
+  "description": "Mobile capabilities for AI Assist Reader",
   "platforms": ["iOS", "android"],
   "permissions": [
     "core:default",

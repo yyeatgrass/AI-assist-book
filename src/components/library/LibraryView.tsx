@@ -45,7 +45,7 @@ export function LibraryView() {
       <header className="bg-white border-b border-gray-200 px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Assist Book</h1>
+            <h1 className="text-2xl font-bold text-gray-900">AI Assist Reader</h1>
             <p className="text-sm text-gray-500">Read PDF & EPUB with AI explanations</p>
           </div>
           <div className="flex gap-2">

@@ -52,7 +52,7 @@ export function ExplainPanel() {
   };
 
   return (
-    <AdaptivePanel open={explain.open} onClose={closeExplain} title="AI解读">
+    <AdaptivePanel open={explain.open} onClose={closeExplain} title="AI参考解读">
       <div className="space-y-4">
         <blockquote className="text-sm text-gray-600 border-l-4 border-blue-200 pl-3 italic">
           {explain.selectedText}

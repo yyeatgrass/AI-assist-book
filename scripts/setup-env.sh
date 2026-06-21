@@ -1,5 +1,5 @@
 #!/bin/zsh
-# AI Assist Book — environment setup helper
+# AI Assist Reader — environment setup helper
 # Run: source scripts/setup-env.sh
 
 export NODE_HOME="$HOME/.local/node-v22.16.0-darwin-x64"

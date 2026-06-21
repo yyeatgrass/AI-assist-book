@@ -30,7 +30,7 @@
 
 | 平台 | 文件 |
 |------|------|
-| macOS | `AI Assist Book_x.y.z_universal.dmg`(Intel + Apple Silicon 通用) |
+| macOS | `AI Assist Reader_x.y.z_universal.dmg`(Intel + Apple Silicon 通用) |
 | Windows | `..._x64-setup.exe`(NSIS)和 `..._x64_en-US.msi` |
 | Linux | `..._amd64.deb` 和 `..._amd64.AppImage` |
 | Android | `app-universal-release.apk` |

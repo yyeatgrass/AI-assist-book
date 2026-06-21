@@ -7,8 +7,8 @@ name: Release
 #   2. Or run this workflow manually from the Actions tab (workflow_dispatch).
 #
 # Output (attached to a draft GitHub Release):
-#   - macOS:   AI Assist Book_x.y.z_universal.dmg  (Intel + Apple Silicon)
-#   - Windows: AI Assist Book_x.y.z_x64-setup.exe (NSIS) + ..._x64_en-US.msi
+#   - macOS:   AI Assist Reader_x.y.z_universal.dmg  (Intel + Apple Silicon)
+#   - Windows: AI Assist Reader_x.y.z_x64-setup.exe (NSIS) + ..._x64_en-US.msi
 #   - Linux:   ai-assist-book_x.y.z_amd64.deb + ..._amd64.AppImage
 #   - Android: app-universal-release.apk (signed if keystore secrets are set)
 
@@ -83,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'app-v__VERSION__' }}
-          releaseName: "AI Assist Book ${{ github.ref_name }}"
+          releaseName: "AI Assist Reader ${{ github.ref_name }}"
           releaseBody: "See the assets below to download and install."
           releaseDraft: true
           prerelease: false
