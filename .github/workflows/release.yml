@@ -164,15 +164,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ---------------------------------------------------------------------------
-  # iOS: produces an installable .ipa.
+  # iOS: produces a signed .ipa and (optionally) uploads it to TestFlight.
   #
   # Apple requires a paid Developer account to sign apps. This job stays GREEN
   # but does nothing until you add these repository secrets:
+  #
+  # Required to build & sign the .ipa:
   #   APPLE_CERTIFICATE           base64 of your Apple Distribution .p12
   #   APPLE_CERTIFICATE_PASSWORD  password for that .p12
   #   APPLE_PROVISIONING_PROFILE  base64 of the .mobileprovision
   #   APPLE_DEVELOPMENT_TEAM      your 10-character Team ID
-  #   IOS_EXPORT_METHOD           ad-hoc | app-store-connect | development
+  #   IOS_EXPORT_METHOD           app-store-connect (default) | release-testing | debugging
+  #
+  # Optional — add these to auto-upload to App Store Connect / TestFlight:
+  #   ASC_KEY_ID                  App Store Connect API key ID
+  #   ASC_ISSUER_ID               App Store Connect API issuer ID
+  #   ASC_API_KEY_P8              base64 of the AuthKey_XXXX.p8 file
   # ---------------------------------------------------------------------------
   ios:
     runs-on: macos-latest
@@ -237,7 +244,7 @@ jobs:
         if: steps.signing.outputs.ready == 'true'
         env:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
-        run: npx tauri ios build --export-method ${{ secrets.IOS_EXPORT_METHOD || 'ad-hoc' }}
+        run: npx tauri ios build --export-method ${{ secrets.IOS_EXPORT_METHOD || 'app-store-connect' }}
 
       - name: Upload IPA artifact
         if: steps.signing.outputs.ready == 'true'
@@ -256,3 +263,23 @@ jobs:
           files: src-tauri/gen/apple/build/**/*.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Uploads the .ipa to App Store Connect so it shows up in TestFlight and
+      # can be submitted for App Store review. Runs only when the App Store
+      # Connect API key secrets are present (ASC_KEY_ID / ASC_ISSUER_ID /
+      # ASC_API_KEY_P8). Create the key at App Store Connect → Users and Access
+      # → Integrations → App Store Connect API (role: App Manager or higher).
+      - name: Upload to App Store Connect (TestFlight)
+        if: steps.signing.outputs.ready == 'true' && env.ASC_KEY_ID != ''
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_P8" | base64 -d > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          IPA=$(find src-tauri/gen/apple/build -name "*.ipa" | head -1)
+          if [ -z "$IPA" ]; then echo "No .ipa found to upload"; exit 1; fi
+          echo "Uploading $IPA to App Store Connect…"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
