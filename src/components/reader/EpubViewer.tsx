@@ -40,6 +40,7 @@ export function EpubViewer({ book, theme, fontSize, onSelection }: EpubViewerPro
   useEffect(() => {
     let cancelled = false;
     let bookInstance: ReturnType<typeof ePub> | null = null;
+    let selectionPoll: number | undefined;
 
     (async () => {
       try {
@@ -58,6 +59,70 @@ export function EpubViewer({ book, theme, fontSize, onSelection }: EpubViewerPro
 
         renditionRef.current = rendition;
 
+        const computeContext = (doc: Document, text: string) => {
+          const fullText = doc.body?.textContent ?? "";
+          const idx = fullText.indexOf(text);
+          return idx >= 0
+            ? fullText.slice(Math.max(0, idx - 200), Math.min(fullText.length, idx + text.length + 200))
+            : undefined;
+        };
+
+        const reportSelection = (win: Window, doc: Document) => {
+          const sel = win.getSelection();
+          if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+          const text = sel.toString().trim();
+          if (!text) return;
+
+          const range = sel.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          const frame = doc.defaultView?.frameElement as HTMLElement | null;
+          const frameRect = frame?.getBoundingClientRect();
+          const offsetLeft = frameRect?.left ?? 0;
+          const offsetTop = frameRect?.top ?? 0;
+
+          const x = offsetLeft + rect.left + rect.width / 2;
+          const y = offsetTop + rect.bottom;
+
+          onSelection({
+            text,
+            context: computeContext(doc, text),
+            x,
+            y,
+            trigger: "selection",
+          });
+        };
+
+        // WKWebView (macOS/iOS) does not reliably deliver selectionchange /
+        // mouseup events from inside the epub.js iframe to listeners we attach,
+        // so event-based detection silently fails. Instead we poll the rendered
+        // iframe for a selection. This is robust across every webview.
+        let lastReported = "";
+        selectionPoll = window.setInterval(() => {
+          const iframe = containerRef.current?.querySelector("iframe") as
+            | HTMLIFrameElement
+            | null;
+          const win = iframe?.contentWindow as Window | null;
+          const doc = iframe?.contentDocument as Document | null;
+          if (!win || !doc) return;
+
+          const sel = win.getSelection();
+          if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+            lastReported = "";
+            return;
+          }
+          const text = sel.toString().trim();
+          if (!text || text === lastReported) return;
+          lastReported = text;
+          reportSelection(win, doc);
+        }, 300);
+
+        rendition.on("relocated", (...args: unknown[]) => {
+          const location = args[0] as { start: { cfi: string; percentage: number } };
+          const cfi = location.start.cfi;
+          const percent = location.start.percentage * 100;
+          updateProgress(book.id, null, cfi, percent).catch(console.error);
+        });
+
         await rendition.display(book.progress.cfi ?? undefined);
 
         rendition.themes.default({
@@ -70,93 +135,6 @@ export function EpubViewer({ book, theme, fontSize, onSelection }: EpubViewerPro
           },
         });
 
-        rendition.on("relocated", (...args: unknown[]) => {
-          const location = args[0] as { start: { cfi: string; percentage: number } };
-          const cfi = location.start.cfi;
-          const percent = location.start.percentage * 100;
-          updateProgress(book.id, null, cfi, percent).catch(console.error);
-        });
-
-        const attachSelection = () => {
-          const contents = rendition.getContents();
-          contents.forEach((content) => {
-            const doc = content.document;
-            const readSelection = () => {
-              const selection = doc.getSelection();
-              if (!selection || selection.isCollapsed || !selection.toString().trim()) return null;
-              const text = selection.toString().trim();
-              const fullText = doc.body?.textContent ?? "";
-              const idx = fullText.indexOf(text);
-              const context =
-                idx >= 0
-                  ? fullText.slice(Math.max(0, idx - 200), Math.min(fullText.length, idx + text.length + 200))
-                  : undefined;
-              return { selection, text, context };
-            };
-
-            const frameOffset = () => {
-              const frame = doc.defaultView?.frameElement as HTMLElement | null;
-              const rect = frame?.getBoundingClientRect();
-              return { left: rect?.left ?? 0, top: rect?.top ?? 0 };
-            };
-
-            const onContextMenu = (event: MouseEvent) => {
-              const selected = readSelection();
-              if (!selected) return;
-
-              event.preventDefault();
-              const offset = frameOffset();
-              onSelection({
-                text: selected.text,
-                context: selected.context,
-                x: offset.left + event.clientX,
-                y: offset.top + event.clientY,
-                trigger: "contextmenu",
-              });
-            };
-
-            const onMouseUp = (event: MouseEvent) => {
-              const offset = frameOffset();
-              const x = offset.left + event.clientX;
-              const y = offset.top + event.clientY;
-              setTimeout(() => {
-                const selected = readSelection();
-                if (!selected) return;
-                onSelection({
-                  text: selected.text,
-                  context: selected.context,
-                  x,
-                  y,
-                  trigger: "selection",
-                });
-              }, 10);
-            };
-
-            const onTouchEnd = () => {
-              setTimeout(() => {
-                const selected = readSelection();
-                if (!selected) return;
-                const range = selected.selection.getRangeAt(0);
-                const rect = range.getBoundingClientRect();
-                const offset = frameOffset();
-                onSelection({
-                  text: selected.text,
-                  context: selected.context,
-                  x: offset.left + rect.left + rect.width / 2,
-                  y: offset.top + rect.bottom,
-                  trigger: "selection",
-                });
-              }, 10);
-            };
-            doc.addEventListener("contextmenu", onContextMenu);
-            doc.addEventListener("mouseup", onMouseUp);
-            doc.addEventListener("touchend", onTouchEnd);
-          });
-        };
-
-        rendition.on("rendered", attachSelection);
-        attachSelection();
-
         if (!cancelled) setLoading(false);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -165,6 +143,7 @@ export function EpubViewer({ book, theme, fontSize, onSelection }: EpubViewerPro
 
     return () => {
       cancelled = true;
+      if (selectionPoll) window.clearInterval(selectionPoll);
       if (renditionRef.current) {
         renditionRef.current.destroy();
         renditionRef.current = null;

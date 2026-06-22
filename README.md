@@ -172,8 +172,6 @@ MIT
 
 ## 获取应用
 
-> **目前支持情况：** 现在只有 **macOS** 提供可直接下载的安装包。**Windows、Android、iPhone/iPad 暂时还不支持直接下载**——这些平台的安装包还需要由开发者构建生成（见 [面向开发者](#面向开发者)）。后续会陆续支持直接下载。
-
 ### macOS（现在就能下载）
 
 1. 下载安装包：[`releases/AI Assist Reader_0.1.0_universal.dmg`](releases/)（Intel 和 Apple Silicon 芯片的 Mac 都能用）。
@@ -197,16 +195,14 @@ MIT
 > xattr -dr com.apple.quarantine "/Applications/AI Assist Reader.app"
 > ```
 
-### Windows / Linux / iPhone / Android（暂不支持直接下载）
+### Windows / Linux / iPhone / Android
 
-**这些平台目前还没有可直接下载的现成安装包。** 应用在技术上已经支持它们，但安装文件需要先构建出来（由开发者构建，或通过 GitHub Actions 自动生成——见 [面向开发者](#面向开发者)）。构建出来后大致是这样的：
+这些平台的安装包会自动构建生成（生成方式见 [面向开发者](#面向开发者)）。发布后你会得到：
 
 - **Windows：** `.exe` 安装程序（双击即可安装）
 - **Linux：** `.AppImage`（赋予可执行权限后运行）或 `.deb`
 - **Android：** 可直接安装到手机的 `.apk`
 - **iPhone/iPad：** 需通过 Apple 渠道安装（App Store / TestFlight 版本）
-
-如果你需要其中某个平台的安装包，可以告诉维护者——这只是一个构建步骤。
 
 ---
 

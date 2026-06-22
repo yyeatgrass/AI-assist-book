@@ -11,6 +11,11 @@ declare module "epubjs" {
     };
     on(event: string, callback: (...args: unknown[]) => void): void;
     getContents(): Array<{ document: Document }>;
+    hooks: {
+      content: {
+        register(hook: (contents: { document: Document }) => void): void;
+      };
+    };
   }
 
   export interface Book {
