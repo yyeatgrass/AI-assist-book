@@ -4,11 +4,10 @@ interface SelectionToolbarProps {
   x: number;
   y: number;
   onExplain: () => void;
-  onCopy: () => void;
   onClose: () => void;
 }
 
-export function SelectionToolbar({ x, y, onExplain, onCopy, onClose }: SelectionToolbarProps) {
+export function SelectionToolbar({ x, y, onExplain, onClose }: SelectionToolbarProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: y + 8, left: x });
 
@@ -34,32 +33,22 @@ export function SelectionToolbar({ x, y, onExplain, onCopy, onClose }: Selection
   }, [x, y]);
 
   return (
-    <div
-      ref={ref}
-      className="fixed z-50 min-w-[230px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
-      style={{ top: pos.top, left: pos.left }}
-    >
-      <button
-        type="button"
-        onClick={onExplain}
-        className="block min-h-[44px] w-full px-4 text-left text-sm font-semibold text-blue-600 hover:bg-blue-50"
+    <>
+      {/* Transparent backdrop: clicking anywhere outside the toolbar dismisses it. */}
+      <div className="fixed inset-0 z-40" onMouseDown={onClose} />
+      <div
+        ref={ref}
+        className="fixed z-50 min-w-[230px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
+        style={{ top: pos.top, left: pos.left }}
       >
-        Ask AI: what does this mean?
-      </button>
-      <button
-        type="button"
-        onClick={onCopy}
-        className="block min-h-[44px] w-full px-4 text-left text-sm text-gray-700 hover:bg-gray-100"
-      >
-        Copy selected text
-      </button>
-      <button
-        type="button"
-        onClick={onClose}
-        className="block min-h-[44px] w-full px-4 text-left text-sm text-gray-500 hover:bg-gray-100"
-      >
-        Dismiss
-      </button>
-    </div>
+        <button
+          type="button"
+          onClick={onExplain}
+          className="block min-h-[44px] w-full px-4 text-left text-sm font-semibold text-blue-600 hover:bg-blue-50"
+        >
+          问问 AI：这段是什么意思？
+        </button>
+      </div>
+    </>
   );
 }

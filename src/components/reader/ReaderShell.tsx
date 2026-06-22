@@ -107,7 +107,6 @@ export function ReaderShell() {
             x={selection.x}
             y={selection.y}
             onExplain={() => openExplain(selection.text, selection.context)}
-            onCopy={() => navigator.clipboard.writeText(selection.text)}
             onClose={() => setSelection(null)}
           />
         )}
