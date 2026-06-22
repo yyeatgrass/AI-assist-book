@@ -10,7 +10,7 @@ Works on macOS, Windows, Linux, iPhone/iPad, and Android.
 
 ## Get the app
 
-> **Current availability:** Only **macOS** has a ready-to-download installer right now. **Windows, Android, and iPhone/iPad are not yet available as a direct download** — those builds still need to be produced by a developer (see [For developers](#for-developers)). Direct downloads for them are planned.
+> **Current availability:** **macOS, Windows, Linux, and Android** all have ready-to-download installers on the [**Releases page**](https://github.com/yyeatgrass/AI-assist-book/releases). **iPhone/iPad** is not yet available as a direct download (it requires an Apple-signed build — see [For developers](#for-developers)).
 
 ### macOS (ready to download now)
 
@@ -35,16 +35,17 @@ Works on macOS, Windows, Linux, iPhone/iPad, and Android.
 > xattr -dr com.apple.quarantine "/Applications/AI Assist Reader.app"
 > ```
 
-### Windows / Linux / iPhone / Android (not a direct download yet)
+### Windows / Linux / Android (download from Releases)
 
-There is **no ready-made installer to download for these platforms yet.** The app already supports them technically, but the installable files still have to be built first (by a developer, or automatically via GitHub Actions — see [For developers](#for-developers)). Once built, they look like this:
+Grab the file for your device from the [**Releases page**](https://github.com/yyeatgrass/AI-assist-book/releases):
 
-- **Windows:** a `.exe` setup file (just double-click to install)
-- **Linux:** a `.AppImage` (make it executable and run) or `.deb`
-- **Android:** an `.apk` you can install on your phone
-- **iPhone/iPad:** requires installing through Apple (an App Store / TestFlight build)
+- **Windows:** `AI Assist Reader_…_x64-setup.exe` — double-click to install (or use the `.msi`).
+- **Linux:** `…_amd64.AppImage` (make it executable: `chmod +x …AppImage`, then run) or `…_amd64.deb`.
+- **Android:** `app-universal-release.apk` — copy to your phone and open it to install (you may need to allow "install from unknown sources").
 
-If you need one of these, let the maintainer know — producing them is just a build step.
+### iPhone / iPad (not a direct download yet)
+
+iOS requires an Apple-signed build delivered through Apple (App Store / TestFlight). This needs a paid Apple Developer account — see [For developers](#for-developers).
 
 ---
 
@@ -195,14 +196,17 @@ MIT
 > xattr -dr com.apple.quarantine "/Applications/AI Assist Reader.app"
 > ```
 
-### Windows / Linux / iPhone / Android
+### Windows / Linux / Android（到 Releases 页下载）
 
-这些平台的安装包会自动构建生成（生成方式见 [面向开发者](#面向开发者)）。发布后你会得到：
+到 [**Releases 页**](https://github.com/yyeatgrass/AI-assist-book/releases) 下载对应设备的文件：
 
-- **Windows：** `.exe` 安装程序（双击即可安装）
-- **Linux：** `.AppImage`（赋予可执行权限后运行）或 `.deb`
-- **Android：** 可直接安装到手机的 `.apk`
-- **iPhone/iPad：** 需通过 Apple 渠道安装（App Store / TestFlight 版本）
+- **Windows：** `AI Assist Reader_…_x64-setup.exe`，双击安装(或用 `.msi`)。
+- **Linux：** `…_amd64.AppImage`(先 `chmod +x …AppImage` 赋予可执行权限再运行)或 `…_amd64.deb`。
+- **Android：** `app-universal-release.apk`，拷到手机打开安装(可能需要允许「安装未知来源应用」)。
+
+### iPhone / iPad（暂无直接下载）
+
+iOS 需要经过 Apple 签名、通过 App Store / TestFlight 安装，需付费的 Apple 开发者账号——见 [面向开发者](#面向开发者)。
 
 ---
 
